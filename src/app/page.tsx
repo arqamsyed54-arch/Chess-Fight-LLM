@@ -16,7 +16,7 @@ export default function Home() {
           <span className="text-[24px] font-bold text-primary">Exam Heal AI</span>
         </div>
         <div className="hidden md:flex gap-6">
-          <a className="text-[14px] font-semibold text-primary border-b-2 border-primary pb-1" href="#">Product</a>
+          <Link href="/dashboard" className="text-[14px] font-semibold text-primary border-b-2 border-primary pb-1">Dashboard</Link>
           <a className="text-[14px] font-semibold text-on-surface-variant hover:text-primary transition-colors pb-1" href="#features">Features</a>
           <a className="text-[14px] font-semibold text-on-surface-variant hover:text-primary transition-colors pb-1" href="#pricing">Pricing</a>
         </div>
