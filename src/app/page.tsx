@@ -17,8 +17,8 @@ export default function Home() {
         </div>
         <div className="hidden md:flex gap-6">
           <Link href="/dashboard" className="text-[14px] font-semibold text-primary border-b-2 border-primary pb-1">Dashboard</Link>
-          <a className="text-[14px] font-semibold text-on-surface-variant hover:text-primary transition-colors pb-1" href="#features">Features</a>
-          <a className="text-[14px] font-semibold text-on-surface-variant hover:text-primary transition-colors pb-1" href="#pricing">Pricing</a>
+          <Link href="/features" className="text-[14px] font-semibold text-on-surface-variant hover:text-primary transition-colors pb-1">Features</Link>
+          <Link href="/pricing" className="text-[14px] font-semibold text-on-surface-variant hover:text-primary transition-colors pb-1">Pricing</Link>
         </div>
         <div>
           <Link href="/signup" className="bg-primary-container text-on-primary-container text-[14px] font-semibold px-4 py-2 rounded-xl hover:opacity-80 transition-opacity">

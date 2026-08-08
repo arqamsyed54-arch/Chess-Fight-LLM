@@ -5,9 +5,13 @@ import { usePathname } from 'next/navigation'
 
 const navItems = [
   { href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
+  { href: '/dashboard/generate', icon: 'auto_awesome', label: 'Generate Paper' },
   { href: '/dashboard/analytics', icon: 'analytics', label: 'Analytics' },
   { href: '/dashboard/question-bank', icon: 'database', label: 'Question Bank' },
   { href: '/dashboard/ai-assistant', icon: 'smart_toy', label: 'AI Assistant' },
+  { href: '/dashboard/templates', icon: 'view_quilt', label: 'Templates' },
+  { href: '/dashboard/mcp', icon: 'hub', label: 'MCP' },
+  { href: '/dashboard/api-keys', icon: 'key', label: 'API Keys' },
 ]
 
 const footerItems = [
