@@ -90,10 +90,10 @@ function buildHeader(cfg: GenerationConfig): string {
 }
 
 export const TEMPLATES = [
-  { id: 'standard', name: 'Standard', desc: 'Clean layout with subject header and marks column.' },
-  { id: 'school', name: 'School Letterhead', desc: 'School name and logo prominent at the top.' },
-  { id: 'board', name: 'Board Style', desc: 'Set-style header, instructions box and time allowed.' },
-  { id: 'minimal', name: 'Minimal', desc: 'Questions only — no decorative header.' },
+  { id: 'school', name: 'School Letterhead', desc: 'School name and logo prominent at the top, clean marks column.' },
+  { id: 'board', name: 'Board-Exam Style', desc: 'Set-style header with instructions box, section headings and time allowed.' },
+  { id: 'minimal', name: 'Minimalist', desc: 'Questions only — no decorative header, maximum white space.' },
+  { id: 'grid', name: 'Modern Grid', desc: 'Carded question grid with corner marks, aimed at digital-first classrooms.' },
 ];
 
 export function generateConfigDefault(): GenerationConfig {
@@ -106,7 +106,7 @@ export function generateConfigDefault(): GenerationConfig {
     totalQuestions: 10,
     types: ['MCQ', 'Short Answer'],
     customQuestions: [],
-    templateId: 'standard',
+    templateId: 'school',
     header: { schoolName: '', teacherName: '', instructions: 'Answer all questions.' },
     otherInstructions: '',
   };

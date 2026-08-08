@@ -41,8 +41,27 @@ export interface ApiKey {
   id: string;
   label: string;
   key: string;
+  hash?: string;
   createdAt: string;
   revoked: boolean;
+  lastUsedAt?: string;
+  calls: number;
+  creditsUsed: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  ts: number;
+}
+
+export interface LoginEvent {
+  id: string;
+  device: string;
+  location: string;
+  at: string;
+  status: 'success' | 'failed';
 }
 
 export interface UserProfile {

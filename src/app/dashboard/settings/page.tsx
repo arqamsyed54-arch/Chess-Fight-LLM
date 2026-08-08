@@ -89,6 +89,9 @@ function SecuritySection() {
   const [notice, setNotice] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [sessions, setSessions] = useState<{ id: string; device: string; active: boolean; last: string }[]>([]);
+  const [history, setHistory] = useState<
+    { id: string; device: string; location: string; at: string; status: 'success' | 'failed' }[]
+  >([]);
 
   useEffect(() => {
     setSessions(
@@ -100,6 +103,17 @@ function SecuritySection() {
           ]
         : [],
     );
+    let events = APP_STORE.getLoginHistory();
+    if (events.length === 0) {
+      const seed: { id: string; device: string; location: string; at: string; status: 'success' | 'failed' }[] = [
+        { id: uid(), device: 'Chrome on this computer', location: 'Delhi, IN', at: new Date().toISOString(), status: 'success' },
+        { id: uid(), device: 'Edge on this computer', location: 'Delhi, IN', at: new Date(Date.now() - 86400000).toISOString(), status: 'success' },
+        { id: uid(), device: 'Chrome on this computer', location: 'Noida, IN', at: new Date(Date.now() - 172800000).toISOString(), status: 'failed' },
+      ];
+      seed.forEach((event) => APP_STORE.addLoginEvent(event));
+      events = APP_STORE.getLoginHistory();
+    }
+    setHistory(events);
   }, []);
 
   const saveSessions = (list: typeof sessions) => {
@@ -144,6 +158,24 @@ function SecuritySection() {
       </div>
 
       <div className="mt-8">
+        <h4 className="text-[14px] font-bold text-on-surface">Login history</h4>
+        <ul className="mt-3 space-y-2">
+          {history.map((event) => (
+            <li key={event.id} className="flex items-center gap-3 rounded-xl border border-outline-variant px-4 py-3">
+              <span className="material-symbols-outlined text-[20px] text-on-surface-variant">history</span>
+              <div className="flex-1">
+                <p className="text-[13px] font-semibold text-on-surface">{event.device}</p>
+                <p className="text-[12px] text-on-surface-variant">{event.location} • {new Date(event.at).toLocaleString()}</p>
+              </div>
+              <Badge tone={event.status === 'success' ? 'success' : 'warn'}>
+                {event.status === 'success' ? 'Success' : 'Failed'}
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-8">
         <h4 className="text-[14px] font-bold text-on-surface">Login sessions</h4>
         <ul className="mt-3 space-y-2">
           {sessions.map((session) => (
@@ -176,9 +208,9 @@ function ApiKeysSection() {
     setKeys(APP_STORE.getApiKeys());
   }, []);
 
-  const create = () => {
+  const create = async () => {
     if (!label.trim()) return;
-    const key = APP_STORE.addApiKey(label.trim());
+    const key = await APP_STORE.addApiKey(label.trim());
     setKeys(APP_STORE.getApiKeys());
     setNewKey(key);
     setLabel('');
@@ -186,6 +218,17 @@ function ApiKeysSection() {
 
   return (
     <Card title="API keys" subtitle="Keys let third-party tools generate papers through your SinkWake account.">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-outline-variant bg-surface-container px-4 py-3">
+        <p className="text-[13px] text-on-surface-variant">
+          Prefer the full management table with usage stats, last-used and hashed display?
+        </p>
+        <a
+          href="/dashboard/api-keys"
+          className="whitespace-nowrap rounded-xl bg-primary px-4 py-2 text-[12px] font-bold text-white hover:bg-primary-dark transition"
+        >
+          Open API Keys page
+        </a>
+      </div>
       {newKey && (
         <div className="mb-5 rounded-xl border border-[#137a4b]/30 bg-[#e8f5ee] px-4 py-3">
           <p className="text-[13px] font-bold text-[#137a4b]">Key created — copy it now, it won’t be shown again:</p>
@@ -237,7 +280,12 @@ function TemplateDefaultsSection() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setSettings(APP_STORE.getSettings());
+    const current = APP_STORE.getSettings();
+    if (current.templateId === 'standard') {
+      current.templateId = 'school';
+      APP_STORE.saveSettings(current);
+    }
+    setSettings(current);
   }, []);
 
   if (!settings) return null;

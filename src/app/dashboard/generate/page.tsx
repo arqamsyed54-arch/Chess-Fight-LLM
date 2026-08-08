@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, ChoiceChip, PrimaryButton, SecondaryButton, TextArea, TextField } from '@/components/FormControls';
 import { buildPaper, downloadDoc, generateConfigDefault, TEMPLATES } from '@/lib/data/generator';
 import { DIFFICULTIES, PURPOSES, QUESTION_TYPES, SUBJECTS } from '@/lib/data/questionBank';
@@ -94,7 +94,19 @@ export default function GeneratePage() {
   const [paper, setPaper] = useState<Paper | null>(null);
   const [customText, setCustomText] = useState('');
   const [logoName, setLogoName] = useState('');
+  const [templateNotice, setTemplateNotice] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const preferred = APP_STORE.getPreferredTemplate();
+    if (preferred && TEMPLATES.some((t) => t.id === preferred)) {
+      setConfig((prev) => ({ ...prev, templateId: preferred }));
+      const name = TEMPLATES.find((t) => t.id === preferred)?.name;
+      setTemplateNotice(typeof name === 'string' ? name : '');
+      APP_STORE.setPreferredTemplate('');
+      setTimeout(() => setTemplateNotice(''), 6000);
+    }
+  }, []);
 
   const patch = (updates: Partial<GenerationConfig>) =>
     setConfig((prev) => ({ ...prev, ...updates }));
@@ -284,6 +296,12 @@ export default function GeneratePage() {
       </aside>
 
       <div className="space-y-6">
+        {templateNotice !== '' && (
+          <div className="flex items-center gap-2 rounded-xl border border-[#137a4b]/30 bg-[#e8f5ee] px-4 py-3 text-[13px] font-semibold text-[#137a4b]">
+            <span className="material-symbols-outlined text-[18px]">check_circle</span>
+            Template “{templateNotice}” applied — review it on Step 8.
+          </div>
+        )}
         <Card
           title={`Step ${step + 1}: ${STEP_TITLES[step]}`}
           subtitle={

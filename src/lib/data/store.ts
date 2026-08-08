@@ -3,6 +3,8 @@
 import type {
   ApiKey,
   AppSettings,
+  ChatMessage,
+  LoginEvent,
   Paper,
   Ticket,
   UserProfile,
@@ -14,6 +16,8 @@ const KEYS = {
   settings: 'eah_settings',
   tickets: 'eah_tickets',
   profile: 'eah_profile',
+  loginHistory: 'eah_login_history',
+  preferredTemplate: 'eah_preferred_template',
 } as const;
 
 function read<T>(key: string, fallback: T): T {
@@ -36,7 +40,7 @@ function write<T>(key: string, value: T): void {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  templateId: 'standard',
+  templateId: 'school',
   defaultDifficulty: 'Medium',
   defaultPurpose: 'Practice',
   excludeAnswerKeys: false,
@@ -70,13 +74,17 @@ export const APP_STORE = {
   getApiKeys(): ApiKey[] {
     return read<ApiKey[]>(KEYS.apiKeys, []);
   },
-  addApiKey(label: string): ApiKey {
+  async addApiKey(label: string): Promise<ApiKey> {
+    const raw = `eah_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 10)}`;
     const key: ApiKey = {
       id: uid(),
       label,
-      key: `eah_${Math.random().toString(36).slice(2, 10)}${Math.random().toString(36).slice(2, 10)}`,
+      key: raw,
+      hash: await hashKey(raw),
       createdAt: new Date().toISOString(),
       revoked: false,
+      calls: 0,
+      creditsUsed: 0,
     };
     write(KEYS.apiKeys, [...this.getApiKeys(), key]);
     return key;
@@ -85,6 +93,16 @@ export const APP_STORE = {
     write(
       KEYS.apiKeys,
       this.getApiKeys().map((k) => (k.id === id ? { ...k, revoked: true } : k)),
+    );
+  },
+  recordApiCall(id: string, credits: number): void {
+    write(
+      KEYS.apiKeys,
+      this.getApiKeys().map((k) =>
+        k.id === id
+          ? { ...k, calls: k.calls + 1, creditsUsed: k.creditsUsed + credits, lastUsedAt: new Date().toISOString() }
+          : k,
+      ),
     );
   },
 
@@ -114,4 +132,39 @@ export const APP_STORE = {
   saveProfile(profile: UserProfile): void {
     write(KEYS.profile, profile);
   },
+
+  getChat(threadKey: string): ChatMessage[] {
+    return read<ChatMessage[]>(`eah_chat_${threadKey}`, []);
+  },
+  saveChat(threadKey: string, messages: ChatMessage[]): void {
+    write(`eah_chat_${threadKey}`, messages.slice(-60));
+  },
+  clearChat(threadKey: string): void {
+    write(`eah_chat_${threadKey}`, []);
+  },
+
+  getLoginHistory(): LoginEvent[] {
+    return read<LoginEvent[]>(KEYS.loginHistory, []);
+  },
+  addLoginEvent(event: LoginEvent): void {
+    write(KEYS.loginHistory, [event, ...this.getLoginHistory()].slice(0, 20));
+  },
+  setPreferredTemplate(templateId: string): void {
+    write(KEYS.preferredTemplate, templateId);
+  },
+  getPreferredTemplate(): string | null {
+    const value = read<string | null>(KEYS.preferredTemplate, null);
+    return value;
+  },
 };
+
+async function hashKey(key: string): Promise<string> {
+  try {
+    const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key));
+    return `sha256:${Array.from(new Uint8Array(buffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')}`;
+  } catch {
+    return `legacy:${key.slice(0, 8)}`;
+  }
+}
