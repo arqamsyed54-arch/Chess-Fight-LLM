@@ -6,10 +6,12 @@ import Button from '@/components/ui/Button'
 
 export default function Navbar() {
   const router = useRouter()
-  const supabase = createClient()
-
+  
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    }
     router.push('/login')
   }
 
