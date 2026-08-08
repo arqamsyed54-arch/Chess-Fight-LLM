@@ -37,6 +37,9 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <span className="text-xl font-bold text-blue-600">Exam Heal AI</span>
             <div className="flex items-center gap-4">
+              <Link href="/dashboard" className="text-slate-600 hover:text-slate-900">
+                Dashboard
+              </Link>
               <Link href="/login" className="text-slate-600 hover:text-slate-900">
                 Sign In
               </Link>
@@ -128,6 +131,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <span className="text-xl font-bold text-blue-600">Exam Heal AI</span>
             <div className="flex gap-6 text-slate-600">
+              <Link href="/dashboard" className="hover:text-slate-900">Dashboard</Link>
               <Link href="/login" className="hover:text-slate-900">Sign In</Link>
               <Link href="/signup" className="hover:text-slate-900">Sign Up</Link>
             </div>
