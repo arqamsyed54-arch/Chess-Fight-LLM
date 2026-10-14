@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="slate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Chess Fight LLM — 3D Arena</title>
+<link rel="icon" href="data:,">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B0F17">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="3d.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }</script>
+</head>
+<body>
+<div id="sr-live" class="sr" aria-live="polite"></div>
+<nav id="topnav">
+  <a href="#/home" class="brand">♞ Chess Fight LLM <span class="tag">3D</span></a>
+  <div class="navlinks">
+    <a href="#/home" data-nav="home">Home</a>
+    <a href="#/setup" data-nav="setup">New game</a>
+    <a href="#/game" data-nav="game">Arena</a>
+    <a href="#/history" data-nav="history">History</a>
+    <a href="#/settings" data-nav="settings">Settings</a>
+  </div>
+  <div class="navstatus"><a class="chip" href="index.html#/setup" title="Flat 2D board">▦ 2D</a></div>
+</nav>
+
+<div id="stage"><div id="scene"></div>
+  <div id="thinkBadge" class="think hidden"><span class="pulse"></span> ENGINE CALCULATING — SILENT</div>
+  <div id="errBanner" class="errbar hidden"><span id="errText"></span><button id="errRetry" class="btn sm primary">Retry</button></div>
+
+  <!-- HOME -->
+  <section id="view-home" class="view overlay">
+    <div class="homecard">
+      <div class="kicker"><span class="pulse"></span> 3D Crucible Arena</div>
+      <h1>Chess Fight LLM</h1>
+      <p class="dim">A silent 30M-param opponent. It answers only by moving pieces.</p>
+      <p class="telemetry dim">Made by Ahmad Syed</p>
+      <p class="telemetry dim" id="homeModel">loading model…</p>
+      <div class="actions col">
+        <button id="btnNew3d" class="btn primary big">＋ New game</button>
+        <button id="btnContinue" class="btn big">▶ Continue</button>
+        <button id="btnHist3d" class="btn">↺ History</button>
+        <button id="btnSet3d" class="btn">⚙ Settings</button>
+        <button id="btnFlat" class="btn ghost">▦ Flat 2D board</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="view-setup" class="view overlay hidden">
+    <div class="homecard wide">
+      <div class="kicker">Deploy session</div><h1>New game</h1>
+      <h2 class="step"><span class="stepnum">01</span> Side</h2>
+      <div class="cards3" id="s3Side">
+        <div class="card selectable" data-side="white" tabindex="0"><div class="glyph">♔</div><b>White</b></div>
+        <div class="card selectable" data-side="random" tabindex="0"><div class="glyph">⚄</div><b>Random</b></div>
+        <div class="card selectable" data-side="black" tabindex="0"><div class="glyph">♚</div><b>Black</b></div>
+      </div>
+      <h2 class="step"><span class="stepnum">02</span> Level</h2>
+      <div class="cards5" id="s3Level"></div>
+      <h2 class="step"><span class="stepnum">03</span> Clock</h2>
+      <div class="cards5" id="s3Tc">
+        <div class="card selectable" data-tc="casual" tabindex="0"><b class="big">∞</b><p>Untimed</p></div>
+        <div class="card selectable" data-tc="3+2" tabindex="0"><b class="big">3+2</b><p>Blitz</p></div>
+        <div class="card selectable" data-tc="5+0" tabindex="0"><b class="big">5+0</b><p>Rapid</p></div>
+        <div class="card selectable" data-tc="10+0" tabindex="0"><b class="big">10+0</b><p>Tournament</p></div>
+        <div class="card selectable" data-tc="15+10" tabindex="0"><b class="big">15+10</b><p>Classical</p></div>
+      </div>
+      <div class="manifestbar"><div class="manifest" id="s3Manifest">—</div>
+        <div class="actions"><button id="btnBackHome" class="btn ghost">Back</button><button id="btnStart3d" class="btn primary big">Start →</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME HUD -->
+  <section id="view-game" class="view hidden">
+    <div class="hudtop">
+      <div class="playercard mini"><div class="avatar">♞</div>
+        <div class="pinfo"><b id="oppTag">ENGINE</b><small id="matchLine" class="telemetry dim">—</small></div>
+        <div class="capbox"><div id="trayTop" class="caps"></div></div>
+        <div class="clock" id="clockTop"><small>ENGINE</small><b>--:--</b></div>
+      </div>
+      <div class="hudmid"><span id="levelTag" class="tag amber">CLUB</span><span id="matEdge" class="telemetry"></span></div>
+      <div class="playercard mini"><div class="avatar you">GM</div>
+        <div class="pinfo"><b id="youTag">YOU</b></div>
+        <div class="capbox"><div id="trayBottom" class="caps"></div></div>
+        <div class="clock active" id="clockBottom"><small>YOU</small><b>--:--</b></div>
+      </div>
+    </div>
+    <div class="hudside">
+      <div class="cambtns">
+        <button data-cam="auto" title="Auto (behind your pieces)">◎</button>
+        <button data-cam="white" title="White side [1]">W</button>
+        <button data-cam="black" title="Black side [2]">B</button>
+        <button data-cam="top" title="Top-down [3]">⌖</button>
+        <button data-cam="iso" title="Iso [4]">⬔</button>
+        <button id="btnCamReset" title="Reset camera">⟲</button>
+        <button id="btnGear" title="Settings">⚙</button>
+      </div>
+      <div class="panel ledger3d">
+        <div class="panelhead"><b>Moves</b><button id="ledgerToggle" class="iconbtn">–</button></div>
+        <div id="ledgerBody"><div id="moves" class="moves"></div>
+          <div class="kbdrow"><input id="kbdInput" placeholder="e2e4 / Nf3" autocomplete="off" spellcheck="false"><button id="kbdPlay" class="btn primary sm">Play</button></div>
+        </div>
+      </div>
+      <div class="btnrow2">
+        <button id="btnDraw" class="btn sm">🤝 Draw</button>
+        <button id="btnResign" class="btn sm danger">⚑ Resign</button>
+      </div>
+      <button id="btnUndo" class="btn sm wide">↩ Undo</button>
+      <button id="btnMenu" class="btn sm ghost wide">⌂ Menu</button>
+    </div>
+    <div id="promoOverlay" class="modal hidden"><div class="sheet">
+      <p>Promote to:</p>
+      <div class="promoGrid">
+        <button data-p="q">♕<small>Queen</small></button>
+        <button data-p="r">♖<small>Rook</small></button>
+        <button data-p="b">♗<small>Bishop</small></button>
+        <button data-p="n">♘<small>Knight</small></button>
+      </div>
+    </div></div>
+    <div id="resultOverlay" class="modal hidden"><div class="sheet">
+      <div class="resulthead"><span>🏆</span><b>Match Concluded</b></div>
+      <div class="resultbox"><b id="resTitle">—</b><p id="resSub" class="dim">—</p><p id="resMeta" class="telemetry dim">—</p></div>
+      <div class="actions"><button id="btnAnalyze" class="btn primary">Analyze (2D)</button><button id="btnRematch" class="btn">Rematch</button><button id="btnHome" class="btn ghost">Home</button></div>
+      <div class="actions" style="margin-top:8px"><button id="btnCopyPgn" class="btn sm ghost">⧉ Copy PGN</button><button id="btnPgnDl" class="btn sm ghost">⤓ PGN</button></div>
+    </div></div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="view-history" class="view overlay hidden">
+    <div class="homecard wide">
+      <div class="kicker">Crucible archive · free camera replay</div><h1>History</h1>
+      <div class="archivegrid2"><div id="hList" class="arclist"></div>
+        <div class="panel"><div class="panelhead"><b>Replay</b><span id="hLabel" class="telemetry dim">—</span></div>
+          <div class="replayctl"><button id="hFirst" class="iconbtn">⏮</button><button id="hPrev" class="iconbtn">◀</button><button id="hPlay" class="iconbtn">▶</button><button id="hNext" class="iconbtn">▶|</button><button id="hLast" class="iconbtn">⏭</button></div>
+          <input id="hSlider" type="range" min="0" max="0" value="0">
+          <button id="hOpenArena" class="btn wide">Open in arena</button>
+          <button id="hBackHome2" class="btn ghost wide">Back</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view overlay hidden">
+    <div class="homecard wide">
+      <div class="kicker">3D settings</div><h1>Settings</h1>
+      <div class="setgrid">
+        <label class="field">Graphics quality<select id="qSel"><option value="auto">Auto</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+        <label class="field">Board theme<select id="thSel"><option value="slate">Tournament slate</option><option value="walnut">Classic walnut</option><option value="phosphor">Terminal green</option><option value="obsidian">Obsidian</option></select></label>
+        <label class="field">Piece style<select id="psSel"><option value="staunton">Staunton</option><option value="classic">Classic</option><option value="minimal">Minimal</option></select></label>
+        <label class="field">Camera<select id="camSel"><option value="auto">Auto</option><option value="white">White</option><option value="black">Black</option><option value="top">Top-down</option><option value="iso">Iso</option></select></label>
+        <label class="field">Animation <b id="animVal" class="telemetry">280ms</b><input id="animRange" type="range" min="0" max="600" step="20" value="280"></label>
+        <label class="field">Volume <b id="vol3Val" class="telemetry">75%</b><input id="vol3" type="range" min="0" max="100" value="75"></label>
+      </div>
+      <div id="swBox">
+        <div class="togglerow"><span><b>Sound</b></span><button id="swSound" class="switch" role="switch"><span></span></button></div>
+        <div class="togglerow"><span><b>Confirm moves</b></span><button id="swConfirm" class="switch" role="switch"><span></span></button></div>
+        <div class="togglerow"><span><b>Legal dots</b></span><button id="swLegal" class="switch" role="switch"><span></span></button></div>
+        <div class="togglerow"><span><b>Last-move trace</b></span><button id="swLast" class="switch" role="switch"><span></span></button></div>
+        <div class="togglerow"><span><b>Cinematic camera</b></span><button id="swCine" class="switch" role="switch"><span></span></button></div>
+        <div class="togglerow"><span><b>High contrast</b></span><button id="swHC" class="switch" role="switch"><span></span></button></div>
+      </div>
+      <div class="actions"><button id="btnFlat2d" class="btn ghost">▦ Flat 2D board</button><button id="gearBack" class="btn ghost">← Back</button><button id="btnBackHome3" class="btn primary">Done</button></div>
+    </div>
+  </section>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script type="module" src="js/game3d.js"></script>
+</body>
+</html>

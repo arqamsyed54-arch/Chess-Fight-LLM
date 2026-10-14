@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="slate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chess Fight LLM — Crucible Arena</title>
+<link rel="icon" href="data:,">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0B0F17">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav id="topnav">
+  <a href="#/setup" class="brand">♞ Chess Fight LLM</a>
+  <div class="navlinks">
+    <a href="#/setup" data-nav="setup">New Game</a>
+    <a href="#/play" data-nav="play">Arena</a>
+    <a href="#/history" data-nav="history">Archive</a>
+    <a href="#/analysis" data-nav="analysis">Analysis</a>
+    <a href="#/study" data-nav="study">Study</a>
+    <a href="#/stats" data-nav="stats">Stats</a>
+    <a href="#/mcp" data-nav="mcp">🤖 MCP</a>
+    <a href="#/settings" data-nav="settings">Settings</a>
+    <a href="site/index.html">🌐 Site</a>
+    <a href="3d.html#/home">🎲 3D Arena</a>
+  </div>
+  <div class="navstatus">
+    <span id="engineChip" class="chip">…</span>
+    <span id="fightChip" class="chip fight hidden">⚡ FIGHT</span>
+  </div>
+</nav>
+
+<main>
+<!-- ============ SETUP ============ -->
+<section id="view-setup" class="view">
+  <div class="pagehead">
+    <div>
+      <div class="kicker"><span class="pulse"></span> Match Protocol 01 // Configuration</div>
+      <h1>Deploy Crucible Session</h1>
+      <p class="dim">Direct board arbitration against the neural model. No chat — it answers only with moves.</p>
+    </div>
+    <div class="telemetry-chips">
+      <div class="tchip"><span class="dim">Runtime</span><b id="setupRuntime">local server</b></div>
+      <div class="tchip"><span class="dim">Model</span><b id="setupModel">…</b></div>
+    </div>
+  </div>
+
+  <h2 class="step"><span class="stepnum">01</span> Choose Alignment</h2>
+  <div class="cards3" id="sideCards" role="radiogroup" aria-label="side">
+    <div class="card selectable" data-side="white" tabindex="0"><div class="glyph">♔</div><b>White</b><p>First-move initiative. Control the pace from move 1.</p></div>
+    <div class="card selectable" data-side="random" tabindex="0"><div class="glyph">⚄</div><b>Balanced Coin</b><p>50/50 allocation. True tournament pairing.</p></div>
+    <div class="card selectable" data-side="black" tabindex="0"><div class="glyph">♚</div><b>Black</b><p>Second move. Counter-punching defense.</p></div>
+  </div>
+
+  <h2 class="step"><span class="stepnum">02</span> Neural Calibration &amp; Elo Profile</h2>
+  <div class="cards5" id="levelCards" role="radiogroup" aria-label="strength"></div>
+
+  <h2 class="step"><span class="stepnum">03</span> Clock Cadence</h2>
+  <div class="cards5" id="tcCards" role="radiogroup" aria-label="time control">
+    <div class="card selectable" data-tc="casual" tabindex="0"><span class="tag">Untimed</span><b class="big">∞</b><p>Casual study. No flags.</p></div>
+    <div class="card selectable" data-tc="3+2" tabindex="0"><span class="tag cyan">Blitz</span><b class="big">3+2</b><p>3 min + 2s increment.</p></div>
+    <div class="card selectable" data-tc="5+0" tabindex="0"><span class="tag">Rapid</span><b class="big">5+0</b><p>Flat 5 minutes.</p></div>
+    <div class="card selectable" data-tc="10+0" tabindex="0"><span class="tag">Tournament Rapid</span><b class="big">10+0</b><p>Championship rapid.</p></div>
+    <div class="card selectable" data-tc="15+10" tabindex="0"><span class="tag">Classical</span><b class="big">15+10</b><p>Deep calculation.</p></div>
+  </div>
+
+  <div class="panel">
+    <div class="panelhead" id="advToggle"><b>⚙ Arbitration &amp; Inference Pipeline</b><span id="advChev">▾</span></div>
+    <div id="advBody" class="advgrid">
+      <div class="field">Inference backend
+        <div class="tchip"><b>Local Python engine (this server)</b><small class="dim">Offline capable — model runs on this machine.</small></div>
+      </div>
+      <label class="switchrow"><span><b>Strict move confirmation</b><small>Tap destination twice to commit.</small></span><button id="setupConfirm" class="switch" role="switch" aria-checked="false"><span></span></button></label>
+      <label class="switchrow"><span><b>Sound</b><small>Move, check and clock cues.</small></span><button id="setupSound" class="switch on" role="switch" aria-checked="true"><span></span></button></label>
+      <label class="switchrow"><span><b>Adaptive book</b><small>Engine favors lines that trouble you. Disclosed, always.</small></span><button id="setupAdaptive" class="switch on" role="switch" aria-checked="true"><span></span></button></label>
+      <label class="switchrow"><span><b>Auto-sparring</b><small>Pick my level from recent results.</small></span><button id="setupAuto" class="switch" role="switch" aria-checked="false"><span></span></button></label>
+      <label class="field">Time odds (minutes, 0 = even)
+        <div style="display:flex;gap:8px"><input id="oddsYou" type="number" min="0" max="60" value="0" title="Your minutes"><input id="oddsEng" type="number" min="0" max="60" value="0" title="Engine minutes"></div>
+        <small>Empty = the clock preset above. Unequal = odds game.</small>
+      </label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panelhead"><b>🌃 Fight-night series</b><span class="telemetry dim" id="seriesState">no series</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label class="field" style="min-width:120px">First to <select id="seriesTarget"><option value="2">2</option><option value="3" selected>3</option><option value="5">5</option></select></label>
+      <button id="btnSeriesStart" class="btn sm">Start series (this level)</button>
+      <button id="btnSeriesStop" class="btn sm ghost">Abandon</button>
+    </div>
+  </div>
+
+  <div class="manifestbar">
+    <div class="manifest">⚔ <span class="dim">SESSION MANIFEST</span> <b id="manifestSide">White</b> · <b id="manifestLevel">Club</b> · <b id="manifestTc">10+0 Rapid</b></div>
+    <div class="actions">
+      <button id="btnRestore" class="btn ghost">↺ Restore previous</button>
+      <button id="btnStart" class="btn primary big">Start Game →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ARENA ============ -->
+<section id="view-play" class="view hidden">
+  <div class="arenagrid">
+    <div class="evalcol">
+      <span id="evalNum" class="telemetry">50%</span>
+      <div class="evalbar"><div id="evalWhite" style="height:50%"></div><div class="evalmid"></div></div>
+      <span class="telemetry dim">MODEL</span>
+    </div>
+    <div class="crucible">
+      <div class="playercard" id="oppCard">
+        <div class="avatar">♞<span class="livedot"></span></div>
+        <div class="pinfo"><b>Neural Knight 30M <span id="oppLevel" class="tag">CLUB</span></b><small id="oppTele" class="telemetry">—</small></div>
+        <div class="capbox"><div id="capByPlayer" class="caps"></div><div id="matDiffTop" class="telemetry"></div></div>
+        <div class="clock" id="clockTop"><small>—</small><b>--:--</b></div>
+      </div>
+      <div id="boardWrap"><svg id="board" viewBox="0 0 800 800" role="img" aria-label="chessboard"></svg>
+        <div id="promoModal" class="modal hidden"><div class="sheet">
+          <p>Promote pawn to:</p>
+          <div class="promoGrid">
+            <button data-p="q">♕<small>Queen</small></button>
+            <button data-p="r">♖<small>Rook</small></button>
+            <button data-p="b">♗<small>Bishop</small></button>
+            <button data-p="n">♘<small>Knight</small></button>
+          </div>
+        </div></div>
+      </div>
+      <div class="playercard" id="youCard">
+        <div class="avatar you">GM</div>
+        <div class="pinfo"><b>You <span id="youSide" class="tag">WHITE</span></b><small id="youHint">Your turn — select a square</small></div>
+        <div class="capbox"><div id="capByEngine" class="caps"></div><div id="matDiffBot" class="telemetry"></div></div>
+        <div class="clock active" id="clockBottom"><small>—</small><b>--:--</b></div>
+      </div>
+      <div id="confirmBar" class="confirmbar hidden"><span id="confirmText"></span><button id="confirmCancel" class="btn ghost sm">Cancel</button></div>
+      <div id="drillBar" class="confirmbar hidden"><span id="drillText"></span></div>
+      <div id="seriesBar" class="confirmbar hidden"><span id="seriesText"></span></div>
+    </div>
+    <aside class="command">
+      <div class="panel">
+        <div class="panelhead"><b id="matchTitle">Match</b><span id="matchLevel" class="tag">—</span></div>
+        <div class="subhead"><span class="telemetry" id="matchMeta">—</span><button id="btnCopyPgn" class="iconbtn" title="Copy PGN">⧉</button></div>
+      </div>
+      <div class="panel ledger">
+        <div class="panelhead"><b>Move Notation</b><span class="telemetry dim" id="ledgerEvalHead" title="Model win probability for White">MODEL%</span></div>
+        <div id="moveLedger" class="moves"></div>
+        <div id="kbdBar"><small class="telemetry dim">⌨ type <b>e2e4</b> or <b>Nf3</b>, Enter plays</small>
+          <div class="kbdrow"><input id="kbdInput" placeholder="Enter move…" autocomplete="off" spellcheck="false"><button id="kbdPlay" class="btn primary sm">Play</button></div>
+        </div>
+      </div>
+      <div class="btnrow2">
+        <button id="btnDraw" class="btn">🤝 Offer Draw</button>
+        <button id="btnResign" class="btn danger">⚑ Resign</button>
+      </div>
+      <button id="btnUndo" class="btn wide" disabled>↩ Undo <small id="undoNote"></small></button>
+    </aside>
+  </div>
+  <div id="resultModal" class="modal hidden"><div class="sheet">
+    <div class="resulthead"><span>🏆</span><b>Match Concluded</b><button id="resultClose" class="iconbtn">✕</button></div>
+    <div class="resultbox"><small class="telemetry">OUTCOME</small><b id="resultTitle">—</b><p id="resultReason" class="dim">—</p></div>
+    <div class="statgrid">
+      <div class="stat"><small>Your accuracy*</small><b id="resultAcc">—</b></div>
+      <div class="stat"><small>Engine accuracy*</small><b id="resultEngAcc">—</b></div>
+      <div class="stat"><small>Plies</small><b id="resultPlies">—</b></div>
+      <div class="stat"><small>Duration</small><b id="resultDur">—</b></div>
+    </div>
+    <small class="dim">*Model-judged, same net that played — not an external engine.</small>
+    <div class="actions"><button id="btnAnalyze" class="btn primary">Analyze Game</button><button id="btnRematch" class="btn">Rematch</button><button id="btnShare" class="btn">🖼 Share card</button><button id="btnNewMatch" class="btn ghost">New Match</button></div>
+  </div></div>
+</section>
+
+<!-- ============ ARCHIVE ============ -->
+<section id="view-history" class="view hidden">
+  <div class="archivebar">
+    <div class="crumb">↺ <span class="telemetry">CRUCIBLE ARCHIVE</span> <span class="dim">/</span> <b id="arcCount" class="telemetry">0 matches</b></div>
+    <div class="actions"><button id="btnEcoFilter" class="btn sm">ECO: <b id="ecoFilterLabel">All</b></button><button id="btnExportAll" class="btn sm">⤓ Export PGN Archive</button></div>
+  </div>
+  <div class="archivegrid">
+    <div>
+      <div class="searchrow"><span class="sicon">⌕</span><input id="arcSearch" placeholder="Search opening, ECO, result…"></div>
+      <div class="pills" id="arcPills">
+        <button data-f="all" class="on">All</button><button data-f="fight">⚡ Fight</button><button data-f="won">Won</button><button data-f="drawn">Drawn</button><button data-f="lost">Lost</button>
+        <select id="arcTc"><option value="">Any clock</option><option value="none">Untimed</option><option value="bullet">Bullet</option><option value="blitz">Blitz</option><option value="rapid">Rapid</option><option value="custom">Custom</option></select>
+      </div>
+      <div id="arcList" class="arclist"></div>
+    </div>
+    <div class="panel replaypanel">
+      <div class="panelhead"><b>Replay</b><span id="replayTitle" class="telemetry dim">select a match</span></div>
+      <svg id="replayBoard" viewBox="0 0 800 800"></svg>
+      <div class="replayctl">
+        <button id="rpFirst" class="iconbtn">⏮</button><button id="rpPrev" class="iconbtn">◀</button>
+        <button id="rpPlay" class="iconbtn">▶</button>
+        <button id="rpNext" class="iconbtn">▶|</button><button id="rpLast" class="iconbtn">⏭</button>
+      </div>
+      <input id="rpSlider" type="range" min="0" max="0" value="0">
+      <div id="rpLabel" class="telemetry dim">—</div>
+      <div id="rpMoves" class="moves small"></div>
+      <div class="btnrow2"><button id="rpPgn" class="btn sm">⤓ PGN</button><button id="rpOpen" class="btn sm">Open in Arena</button></div>
+    </div>
+  </div>
+  <div id="ecoModal" class="modal hidden"><div class="sheet">
+    <div class="resulthead"><b>ECO Opening Filter</b><button id="ecoClose" class="iconbtn">✕</button></div>
+    <div id="ecoList" class="ecolist"></div>
+    <div class="actions"><button id="ecoClear" class="btn ghost sm">Clear filter</button></div>
+  </div></div>
+</section>
+
+<!-- ============ ANALYSIS ============ -->
+<section id="view-analysis" class="view hidden">
+  <div class="arbiterbar"><span class="pulse"></span><b class="telemetry">TERMINAL ARBITER // MATCH REPORT</b><span class="telemetry dim" id="analysisMeta">—</span>
+    <span class="spacer"></span><select id="analysisPick" class="btn sm"></select>
+  </div>
+  <div class="resultbanner"><div id="analysisBadge" class="outcome">—</div>
+    <div><b id="analysisTitle">—</b><p id="analysisSub" class="dim">—</p></div>
+    <div class="statgrid inline">
+      <div class="stat"><small>Your accuracy*</small><b id="anAccP">—</b></div>
+      <div class="stat"><small>Engine accuracy*</small><b id="anAccE">—</b></div>
+      <div class="stat"><small>Plies</small><b id="anPlies">—</b></div>
+      <div class="stat"><small>Duration</small><b id="anDur">—</b></div>
+    </div>
+  </div>
+  <div class="analysisgrid">
+    <div class="panel"><div class="panelhead"><b>Evaluation — model win % for White</b></div>
+      <svg id="evalChart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg>
+      <div class="panelhead"><b>Opening</b></div><p id="anOpening" class="pad">—</p>
+    </div>
+    <div class="panel"><div class="panelhead"><b>Moves</b><span class="actions"><button id="anCopy" class="btn sm ghost">⧉ Copy PGN</button><button id="anDl" class="btn sm ghost">⤓ PGN</button><button id="anRematch" class="btn sm">Rematch</button></span></div>
+      <div id="anMoves" class="moves"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section id="view-settings" class="view hidden">
+  <div class="pagehead"><div><div class="kicker"><span class="pulse"></span> Configuration // Rev 3.0</div>
+    <h1>System &amp; Environment Settings</h1><p class="dim">Tactile cues, board themes, piece sets, acoustics. Saved instantly to this browser.</p></div>
+    <div class="telemetry-chips"><div class="tchip"><span class="dim">Model</span><b id="setModel">…</b></div><div class="tchip"><span class="dim">Storage</span><b>LocalStorage OK</b></div></div>
+  </div>
+  <div class="settingsgrid">
+    <div class="setcol">
+      <div class="panel"><div class="panelhead"><b>▦ Board Surface Theme</b></div><div class="themegrid" id="themeGrid"></div></div>
+      <div class="panel"><div class="panelhead"><b>♞ Piece Set</b></div><div class="piecegrid" id="pieceGrid">
+        <div class="card selectable" data-ps="neo" tabindex="0"><b>Neo-Standard</b><p>Tournament precision glyphs</p><div class="psdemo">♔ ♕ ♖ ♗ ♘ ♙</div></div>
+        <div class="card selectable" data-ps="staunton" tabindex="0"><b>Staunton Classic</b><p>Solid heritage silhouettes</p><div class="psdemo">♚ ♛ ♜ ♝ ♞ ♟</div></div>
+        <div class="card selectable" data-ps="minimal" tabindex="0"><b>Minimal Letters</b><p>High-legibility K Q R B N P</p><div class="psdemo">K Q R B N P</div></div>
+      </div></div>
+      <div class="panel"><div class="panelhead"><b>⏱ Board Mechanics</b></div>
+        <label class="field">Piece transition <b id="animLabel" class="telemetry">120ms</b>
+          <div class="seg" id="animSeg"><button data-v="0">Instant</button><button data-v="120" class="on">120ms</button><button data-v="220">220ms</button><button data-v="320">320ms</button></div></label>
+        <div id="mechToggles"></div>
+      </div>
+    </div>
+    <div class="setcol">
+      <div class="panel"><div class="panelhead"><b>🔊 Acoustics &amp; Haptics</b><button id="setSoundMaster" class="switch on" role="switch"><span></span></button></div>
+        <label class="field">Master gain <b id="volLabel" class="telemetry">75%</b><input id="volRange" type="range" min="0" max="100" value="75"></label>
+        <div id="soundRows"></div>
+        <button id="btnAudition" class="btn wide">Audition sequence</button>
+      </div>
+      <div class="panel"><div class="panelhead"><b>♿ Accessibility</b></div><div id="a11yToggles"></div>
+        <label class="field">Notation locale<select id="localeSel"><option value="en">English — FIDE Standard</option><option value="sym">Universal symbols only</option></select></label>
+      </div>
+      <div class="panel"><div class="panelhead"><b>🧠 Engine Weights &amp; Cache</b></div>
+        <div class="kv"><span>Parameters</span><b id="cacheParams">…</b></div>
+        <div class="kv"><span>Footprint (INT8)</span><b id="cacheMb">…</b></div>
+        <div class="btnrow2"><button id="btnRefreshEngine" class="btn sm">↻ Refresh status</button><button id="btnExportSettings" class="btn sm">⤓ Export JSON</button></div>
+        <label class="btn sm ghost file">⤒ Import JSON<input type="file" id="importSettings" accept="application/json" hidden></label>
+      </div>
+    </div>
+  </div>
+  <div class="manifestbar"><div class="manifest">✓ Changes apply instantly — no restart needed.</div>
+    <div class="actions"><button id="btnInstall" class="btn ghost hidden">⤓ Install app</button><button id="btnResetSettings" class="btn ghost">Reset defaults</button><button id="btnApplySettings" class="btn primary">✓ Apply &amp; Return to Arena</button></div>
+  </div>
+</section>
+
+<!-- ============ STUDY ============ -->
+<section id="view-study" class="view hidden">
+  <div class="pagehead"><div><div class="kicker"><span class="pulse"></span> Train, don't tilt</div>
+    <h1>Study Room</h1><p class="dim">Puzzles from your blunders · repertoire drills · endgames · daily mate.</p></div>
+    <div class="telemetry-chips"><div class="tchip"><span class="dim">Due now</span><b id="studyDue">0</b></div></div>
+  </div>
+  <div class="pills" id="studyTabs">
+    <button data-t="puzzles" class="on">🧩 Blunders</button><button data-t="rep">📖 Repertoire</button><button data-t="drills">♞ Endgames</button><button data-t="daily">📅 Daily</button>
+  </div>
+  <div id="studyBody"></div>
+</section>
+
+<!-- ============ STATS ============ -->
+<section id="view-stats" class="view hidden">
+  <div class="pagehead"><div><div class="kicker"><span class="pulse"></span> Measured, not vibes</div>
+    <h1>Your Numbers</h1><p class="dim">Accuracy trend · openings · weakest phase. Model-judged, same as analysis.</p></div>
+    <button id="btnStatsRefresh" class="btn sm">↻ Refresh</button>
+  </div>
+  <div class="panel"><div class="panelhead"><b>Accuracy trend (you)</b></div><svg id="accChart" viewBox="0 0 600 160" preserveAspectRatio="none"></svg></div>
+  <div class="analysisgrid">
+    <div class="panel"><div class="panelhead"><b>Openings (ECO)</b></div><div id="ecoTable"></div></div>
+    <div class="panel"><div class="panelhead"><b>Weakest phase (avg loss)</b></div><div id="phaseBars"></div></div>
+  </div>
+</section>
+<!-- ============ MCP ============ -->
+<section id="view-mcp" class="view hidden">
+  <div class="pagehead"><div><div class="kicker"><span class="pulse"></span> Other LLMs can play here</div>
+    <h1>🤖 MCP Mode</h1><p class="dim">Any MCP-compatible chatbot plays through the same fair rules engine. Illegal moves rejected, our engine replies at the stated level — silence law applies to bots too.</p></div>
+    <div class="telemetry-chips"><div class="tchip"><span class="dim">Server</span><b id="mcpStatus">checking…</b></div></div>
+  </div>
+  <div class="panel"><div class="panelhead"><b>Connect an outside LLM</b><button id="btnMcpCopy" class="btn sm ghost">⧉ Copy URL</button></div>
+    <p class="telemetry" id="mcpUrl">http://127.0.0.1:8000/mcp/</p>
+    <p class="dim">Claude Code: <span class="telemetry">claude mcp add chess-fight --transport http http://127.0.0.1:8000/mcp/</span><br>
+    Tools: <span class="telemetry">new_game · get_state · legal_moves · play_move · resign · offer_draw · get_pgn</span></p>
+  </div>
+  <div class="panel"><div class="panelhead"><b>▶ Watch referee mode (demo)</b>
+    <span><select id="demoLevel" class="btn sm"><option value="beginner">beginner</option><option value="casual" selected>casual</option><option value="club">club</option></select>
+    <button id="btnDemo" class="btn sm primary">Play demo</button>
+    <button id="btnDemoStop" class="btn sm ghost">Stop</button></span></div>
+    <p class="dim">Both sides played by our engine through the referee channel — the same path an outside LLM uses. Honest demo, no fake bots.</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap"><div id="demoBoard"></div><div style="flex:1;min-width:200px"><div id="demoLog" class="moves small" style="max-height:220px;overflow:auto"></div><p id="demoResult" class="telemetry"></p></div></div>
+  </div>
+  <div class="panel"><div class="panelhead"><b>Bot games on this server</b></div><div id="mcpGames"></div></div>
+</section>
+</main>
+
+<footer><span><b>Chess Fight LLM</b> · silent 30M-param opponent · local inference</span><span class="telemetry dim">Made by Ahmad Syed</span></footer>
+<div id="toast" class="toast hidden"></div>
+<div id="seriesChip" class="toast hidden" style="bottom:auto;top:64px"></div>
+<div id="drillModal" class="modal hidden"><div class="sheet">
+  <div class="resulthead"><span>♞</span><b id="drillTitle">Drill complete</b><button id="drillClose" class="iconbtn">✕</button></div>
+  <p id="drillText" class="dim">—</p>
+  <div class="actions"><button id="drillAgain" class="btn primary">Again</button><button id="drillStudy" class="btn">Study room</button></div>
+</div></div>
+<div id="seriesModal" class="modal hidden"><div class="sheet">
+  <div class="resulthead"><span>🌃</span><b id="seriesTitle">Series decided</b><button id="seriesClose" class="iconbtn">✕</button></div>
+  <p id="seriesText" class="dim">—</p>
+  <div class="actions"><button id="seriesRematch" class="btn primary">New series</button><button id="seriesHome" class="btn">Setup</button></div>
+</div></div>
+<script src="app.js"></script>
+<script src="study-ui.js"></script>
+</body>
+</html>

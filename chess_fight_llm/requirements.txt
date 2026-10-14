@@ -1,0 +1,4 @@
+torch>=2.2
+python-chess>=1.9
+numpy>=1.26
+# optional: onnx>=1.15 (only needed for export.py)

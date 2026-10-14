@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ♞ Chess Fight LLM
 
-## Getting Started
+**Made by Ahmad Syed** · MIT licensed — free for anyone to run, study, and modify.
 
-First, run the development server:
+A silent neural chess opponent. It never chats, never taunts, never hints — **its entire vocabulary is chess moves**. You play; it answers only by moving pieces.
+
+- 🎮 Playable now: 2D arena + 3D arena (Three.js), 5 honest strength levels, clocks, PGN, history, analysis, study room, puzzles, drills
+- 🧠 30M-param move-only transformer + guided search (Fight mode), opening book, piece-square knowledge, quiescence, mate guards
+- 📏 Measured, not promised: rated ladder, tactics exams, published benchmarks in `site/benchmark.html`
+
+## Run it on your machine
+
+Requirements: Python 3.10+ (Windows, macOS, or Linux).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Install
+py -m pip install -r backend/requirements.txt
+
+# 2. Start the server
+py -m uvicorn backend.app:app --port 8000
+
+# 3. Play:  http://127.0.0.1:8000/#/setup
+#    3D:     http://127.0.0.1:8000/3d.html#/home
+#    Site:   http://127.0.0.1:8000/site/index.html
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+No account needed. Games save locally in your browser + on the server.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Test it
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+py -m pytest backend/tests -q        # full backend suite (45 tests)
+node --test tests3d/coord.test.mjs   # 3D mapping unit tests
+```
 
-## Learn More
+## Train your own net (optional, advanced)
 
-To learn more about Next.js, take a look at the following resources:
+The shipped engine plays from search + knowledge while its network is untrained
+(the app labels evals "provisional" until then). To distill Stockfish into it:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Get a Stockfish binary, set `SF_PATH` in `chess_fight_llm/label.py`
+2. `py -m chess_fight_llm.label --games 150 --depth 10` → `data/sf_labels.jsonl`
+3. `py -m chess_fight_llm.distill --data data/sf_labels.jsonl --epochs 5` → `checkpoints/distilled/best.pt`
+4. Point the engine at the checkpoint — `trained` flips automatically and every
+   provisional label disappears.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Needs patience: ~30M params on CPU trains over hours, not minutes.
 
-## Deploy on Vercel
+## Measure it yourself
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+py -m chess_fight_llm.assess --games 4   # rated matches + tactics + speed → assessments/
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Let other AIs play (MCP mode)
+
+Any MCP-compatible chatbot plays through the same fair rules engine:
+
+- Endpoint: `http://127.0.0.1:8000/mcp/` (Streamable HTTP)
+- Claude Code: `claude mcp add chess-fight --transport http http://127.0.0.1:8000/mcp/`
+- Tools: `new_game` · `get_state` · `legal_moves` · `play_move` · `resign` · `offer_draw` · `get_pgn`
+- `new_game(engine_opponent=false)` = referee mode for LLM-vs-LLM games
+
+## Project layout
+
+| Path | What |
+|---|---|
+| `backend/app.py` | FastAPI server: games, rules, clocks, study, API |
+| `backend/game.py` | Rules core (single source of truth) |
+| `backend/engine_service.py` | Model + search ladder wiring |
+| `backend/study.py` | Puzzles, repertoire, stats, drills, dailies |
+| `backend/openings.py` | ECO book + adaptive book learning |
+| `backend/static/` | 2D app, 3D arena, PWA, this website (`site/`) |
+| `chess_fight_llm/` | 30M transformer, training, search, assessment |
+| `backend/tests/` + `tests3d/` | Test suites |
+
+## Fairness rules (product law)
+
+- No chat, hints, or commentary from the AI — moves only
+- Strength levels openly labeled; handicaps play worse openly, never by humiliation
+- Resigns only when truly lost; draws only when objectively fair
+- "Full strength", never "unbeatable"
